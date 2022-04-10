@@ -4,7 +4,7 @@ from astropy.time import Time
 from astropy import units as u
 import logging
 from nuwinter.paths import winter_schedule_dir
-from nuwinter.data import neutrino_prog_id, summer_filters
+from nuwinter.data import base_prog_id, summer_filters
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def make_schedule(
         schedule_name,
         ra_degs: list,
         dec_degs: list,
-        prog_id: str = neutrino_prog_id,
+        prog_id: str = base_prog_id,
         pi: str = "Somebody",
         filters=None,
         texp: float = 300,

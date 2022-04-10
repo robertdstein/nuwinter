@@ -1,12 +1,15 @@
 import numpy as np
 import logging
 from nuztf.parse_nu_gcn import find_gcn_no, parse_gcn_circular
-from nuwinter.fields import get_summer_fields, plot_summer_fields
+from nuwinter.fields import get_summer_fields_in_box, plot_summer_fields
 from nuwinter.schedule import make_schedule
+from nuwinter.data import summer_filters
 
 logger = logging.getLogger(__name__)
 
 neutrino_nights = [1, 2, 3]
+neutrino_prog_id = "2021A000"
+neutrino_pi = "Stein"
 
 
 def parse_neutrino(
@@ -38,7 +41,7 @@ def parse_neutrino(
 def schedule_neutrino(
         nu_name: str,
         scale: float = 1.,
-        filters: list = list(["u", "g", "r", "i"]),
+        filters: list = summer_filters,
         texp: float = 300,
         nexp: int = 1,
         dither_bool: bool = True,
@@ -48,7 +51,7 @@ def schedule_neutrino(
         summer: bool = True
 ):
     if summer:
-        get_fields = get_summer_fields
+        get_fields = get_summer_fields_in_box
         plot_fields = plot_summer_fields
     else:
         raise NotImplementedError
