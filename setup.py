@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     license="MIT",
     keywords="astronomy image WINTER",
-    url="https://github.com/winter-telescope/winter_drp",
+    url="https://github.com/robertdstein/nuwinter",
     packages=setuptools.find_packages(),
     classifiers=[
         "License :: OSI Approved :: MIT License",
@@ -29,5 +29,6 @@ setuptools.setup(
         "numpy",
         "nuztf",
         "pandas",
+        "wintertoo @ git+ssh://git@github.com/winter-telescope/wintertoo.git@main"
     ]
 )

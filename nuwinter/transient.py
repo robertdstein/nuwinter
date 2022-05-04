@@ -1,50 +1,48 @@
 from nuztf.ampel_api import ampel_api_name
-from nuwinter.data import summer_filters, base_prog_id
-from nuwinter.fields import get_best_summer_field
-from nuwinter.schedule import make_schedule
+from wintertoo.data import get_default_value
+from wintertoo.schedule import schedule_ra_dec
+from nuwinter.neutrino import neutrino_prog_id
 
 
 def schedule_ztf_transient(
         ztf_name: str,
-        filters: list = summer_filters,
-        texp: float = 300.,
-        nexp: int = 1,
-        dither_bool: bool = True,
-        dither_distance="",
+        prog_id: str = neutrino_prog_id,
+        pi: str = "Stein",
+        filters: list = None,
+        t_exp: float = get_default_value("visitExpTime"),
+        n_exp: int = 1,
+        dither_bool: bool = get_default_value("dither"),
+        dither_distance: float = get_default_value("ditherStepSize"),
+        maximum_airmass: float = get_default_value("maxAirmass"),
         nights=[1],
-        pi="Somebody",
-        prog_id=base_prog_id,
         t_0=None,
         summer: bool = True,
-        use_field: bool = True
+        use_field: bool = True,
+        target_priority: float = 1.
 ):
-    if summer:
-        get_best_field = get_best_summer_field
-    else:
-        raise NotImplementedError
 
     res = ampel_api_name(ztf_name, with_history=False)[0]
 
-    if use_field:
-        best_field = get_best_field(res["candidate"]["ra"], res["candidate"]["dec"])
-        ra_deg = best_field["RA"]
-        dec_deg = best_field["Dec"]
+    ra_deg = res["candidate"]["ra"]
+    dec_deg = res["candidate"]["dec"]
 
-    else:
-        ra_deg = res["candidate"]["ra"]
-        dec_deg = res["candidate"]["dec"]
-
-    make_schedule(
+    schedule = schedule_ra_dec(
         schedule_name=f"{ztf_name}_schedule",
-        ra_degs=[ra_deg],
-        dec_degs=[dec_deg],
+        ra_deg=ra_deg,
+        dec_deg=dec_deg,
         filters=filters,
-        texp=texp,
-        nexp=nexp,
+        t_exp=t_exp,
+        n_exp=n_exp,
         dither_bool=dither_bool,
         dither_distance=dither_distance,
+        maximum_airmass=maximum_airmass,
         nights=nights,
-        t_0=t_0,
         pi=pi,
-        prog_id=prog_id
+        prog_id=prog_id,
+        t_0=t_0,
+        summer=summer,
+        use_field=use_field,
+        target_priority=target_priority
     )
+
+    return schedule
