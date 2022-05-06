@@ -29,6 +29,6 @@ setuptools.setup(
         "numpy",
         "nuztf",
         "pandas",
-        "wintertoo @ git+ssh://git@github.com/winter-telescope/wintertoo.git@main"
+        "wintertoo==0.1.0"
     ]
 )
