@@ -1,12 +1,12 @@
 from nuztf.ampel_api import ampel_api_name
 from wintertoo.data import get_default_value
 from wintertoo.schedule import schedule_ra_dec
-from nuwinter.neutrino import neutrino_prog_id
+from nuwinter.neutrino import neutrino_program_name
 
 
 def schedule_ztf_transient(
         ztf_name: str,
-        prog_id: str = neutrino_prog_id,
+        program_name: str = neutrino_program_name,
         pi: str = "Stein",
         filters: list = None,
         t_exp: float = get_default_value("visitExpTime"),
@@ -26,8 +26,16 @@ def schedule_ztf_transient(
     ra_deg = res["candidate"]["ra"]
     dec_deg = res["candidate"]["dec"]
 
+    print(
+        ra_deg,
+        dec_deg,
+        filters,
+        t_exp,
+        n_exp,
+        dither_bool
+    )
+
     schedule = schedule_ra_dec(
-        schedule_name=f"{ztf_name}_schedule",
         ra_deg=ra_deg,
         dec_deg=dec_deg,
         filters=filters,
@@ -38,7 +46,7 @@ def schedule_ztf_transient(
         maximum_airmass=maximum_airmass,
         nights=nights,
         pi=pi,
-        prog_id=prog_id,
+        program_name=program_name,
         t_0=t_0,
         summer=summer,
         use_field=use_field,

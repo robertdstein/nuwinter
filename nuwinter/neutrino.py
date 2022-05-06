@@ -8,7 +8,7 @@ from wintertoo.data import summer_filters, get_default_value
 logger = logging.getLogger(__name__)
 
 neutrino_nights = [1, 2, 3]
-neutrino_prog_id = "2021A000"
+neutrino_program_name = "2021A000"
 neutrino_pi = "Stein"
 neutrino_priority = 10.
 
@@ -48,6 +48,7 @@ def schedule_neutrino(
         dither_bool: bool = get_default_value("dither"),
         dither_distance: float = get_default_value("ditherStepSize"),
         maximum_airmass: float = get_default_value("maxAirmass"),
+        target_priority: float = 1.,
         nights: list = None,
         make_plot: bool = True,
         summer: bool = True,
@@ -80,10 +81,11 @@ def schedule_neutrino(
     ras = res["RA"].to_list()
     decs = res["Dec"].to_list()
 
-    make_schedule(
-        schedule_name=f"{nu_name}_schedule",
+    schedule = make_schedule(
         ra_degs=ras,
         dec_degs=decs,
+        field_ids=field_ids,
+        target_priorities=[target_priority for _ in ras],
         filters=filters,
         t_exp=t_exp,
         n_exp=n_exp,
@@ -93,6 +95,8 @@ def schedule_neutrino(
         nights=nights,
         t_0=nu_time,
         pi="Stein",
-        prog_id=neutrino_prog_id,
+        program_name=neutrino_program_name,
         program_priority=neutrino_priority,
     )
+
+    return schedule
