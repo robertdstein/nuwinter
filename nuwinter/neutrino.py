@@ -1,16 +1,22 @@
 import numpy as np
 import logging
 from nuztf.parse_nu_gcn import find_gcn_no, parse_gcn_circular
-from wintertoo.fields import get_summer_fields_in_box, plot_summer_fields
+from wintertoo.fields import get_fields_in_box, plot_fields
 from wintertoo.schedule import make_schedule
-from wintertoo.data import summer_filters, get_default_value
+from wintertoo.models.too import (
+    AllTooClasses,
+    FullTooRequest,
+    SummerFieldToO,
+    WinterFieldToO,
+)
+from astropy.time import Time
 
 logger = logging.getLogger(__name__)
 
-neutrino_nights = [1, 2, 3]
-neutrino_program_name = "2021A000"
+neutrino_nights = [0, 1, 2, 3]
+neutrino_program_name = "2023A002"
 neutrino_pi = "Stein"
-neutrino_priority = 10.
+neutrino_priority = 150.
 
 
 def parse_neutrino(
@@ -33,8 +39,8 @@ def parse_neutrino(
     dec_unc = scale * np.array([gcn_info["dec_err"][0], gcn_info["dec_err"][1]])
     nu_time = gcn_info["time"]
 
-    ra_lim = [nu_ra + ra_unc[1], nu_ra + ra_unc[0]]
-    dec_lim = [nu_dec + dec_unc[1], nu_dec + dec_unc[0]]
+    ra_lim = (nu_ra + ra_unc[1], nu_ra + ra_unc[0])
+    dec_lim = (nu_dec + dec_unc[1], nu_dec + dec_unc[0])
 
     return ra_lim, dec_lim, nu_time
 
@@ -42,61 +48,78 @@ def parse_neutrino(
 def schedule_neutrino(
         nu_name: str,
         scale: float = 1.,
-        filters: list = summer_filters,
-        t_exp: float = get_default_value("visitExpTime"),
-        n_exp: int = 1,
-        dither_bool: bool = get_default_value("dither"),
-        dither_distance: float = get_default_value("ditherStepSize"),
-        maximum_airmass: float = get_default_value("maxAirmass"),
-        target_priority: float = 1.,
+        too_args: dict | None = None,
         nights: list = None,
         make_plot: bool = True,
-        summer: bool = True,
+        summer: bool = False,
 ):
     if nights is None:
         nights = neutrino_nights
 
-    if summer:
-        get_fields_in_box = get_summer_fields_in_box
-        plot_fields = plot_summer_fields
-    else:
-        raise NotImplementedError
-
     ra_lim, dec_lim, nu_time = parse_neutrino(nu_name, scale=scale)
 
-    res = get_fields_in_box(ra_lim, dec_lim)
+    res = get_fields_in_box(ra_lim, dec_lim, summer=summer)
 
     if make_plot:
         plot_fields(res, ra_lim, dec_lim)
 
-    field_ids = res["#ID"].to_list()
+    too_requests = []
 
-    n_filters = len(filters)
+    t_now = Time.now().mjd
 
-    logger.info(
-        f"Have {len(field_ids)} fields: \n {field_ids} \n With an exposure time of {t_exp}s, {n_filters} filter(s), "
-        f"and {n_exp} cycles, this is approximately {n_exp * t_exp * n_filters * len(field_ids) / 60} minutes long."
-    )
+    for offset in nights:
+        t_start = t_now + offset
+        t_end = t_start + 1
 
-    ras = res["RA"].to_list()
-    decs = res["Dec"].to_list()
+        for _, row in res.iterrows():
 
-    schedule = make_schedule(
-        ra_degs=ras,
-        dec_degs=decs,
-        field_ids=field_ids,
-        target_priorities=[target_priority for _ in ras],
-        filters=filters,
-        t_exp=t_exp,
-        n_exp=n_exp,
-        dither_bool=dither_bool,
-        dither_distance=dither_distance,
-        maximum_airmass=maximum_airmass,
-        nights=nights,
-        t_0=nu_time,
-        pi="Stein",
-        program_name=neutrino_program_name,
-        program_priority=neutrino_priority,
-    )
+            kwargs = {
+                "field_id": row["ID"],
+                "target_priority": neutrino_priority,
+                "start_time_mjd": t_start,
+                "end_time_mjd": t_end,
+            }
+            if too_args is not None:
+                kwargs.update(too_args)
+
+            if summer:
+                too_request = SummerFieldToO(**kwargs)
+            else:
+                too_request = WinterFieldToO(**kwargs)
+            too_requests.append(too_request)
+
+    return too_requests
+
+    # field_ids = res["#ID"].to_list()
+    #
+    # n_filters = len(filters)
+    #
+    # print(res)
+    #
+    # logger.info(
+    #     f"Have {len(field_ids)} fields: \n {field_ids} \n With an exposure time of {t_exp}s, {n_filters} filter(s), "
+    #     f"and {n_exp} cycles, this is approximately {n_exp * t_exp * n_filters * len(field_ids) / 60} minutes long."
+    # )
+
+    # ras = res["RA"].to_list()
+    # decs = res["Dec"].to_list()
+    #
+    # schedule = make_schedule(
+    #     ra_degs=ras,
+    #     dec_degs=decs,
+    #     field_ids=field_ids,
+    #     target_priorities=[target_priority for _ in ras],
+    #     filters=filters,
+    #     t_exp=t_exp,
+    #     n_exp=n_exp,
+    #     dither_bool=dither_bool,
+    #     dither_distance=dither_distance,
+    #     maximum_airmass=maximum_airmass,
+    #     nights=nights,
+    #     t_0=nu_time,
+    #     pi="Stein",
+    #     program_name=neutrino_program_name,
+    #     program_priority=neutrino_priority,
+    # )
 
     return schedule
