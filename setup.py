@@ -21,7 +21,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
     ],
-    python_requires='==3.8',
+    python_requires='>3.10',
     install_requires=[
         "astropy",
         "jupyter",
@@ -29,6 +29,7 @@ setuptools.setup(
         "numpy",
         "nuztf",
         "pandas",
-        "wintertoo==0.1.0"
+        "wintertoo",
+        "winterapi"
     ]
 )
