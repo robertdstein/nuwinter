@@ -8,14 +8,16 @@ from wintertoo.models.too import (
     FullTooRequest,
     SummerFieldToO,
     WinterFieldToO,
+    WinterRaDecToO,
+SummerRaDecToO
 )
+from wintertoo.data import WINTER_BASE_WIDTH, SUMMER_BASE_WIDTH
 from astropy.time import Time
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-neutrino_nights = [0, 1, 2, 3]
-neutrino_program_name = "2023A002"
-neutrino_pi = "Stein"
+neutrino_nights = [0, 1, 2]
 neutrino_priority = 150.
 
 
@@ -45,6 +47,51 @@ def parse_neutrino(
     return ra_lim, dec_lim, nu_time
 
 
+def get_cross(ra_lim, dec_lim, summer: bool = False):
+
+    if summer:
+        width = SUMMER_BASE_WIDTH
+    else:
+        width = WINTER_BASE_WIDTH
+
+    ra_mid = np.mean(ra_lim)
+    dec_mid = np.mean(dec_lim)
+
+    center = [ra_mid, dec_mid]
+    centers = [center]
+    for i in [-1., 1.]:
+        for j in range(2):
+            new = list(center)
+            new[j] += width * i
+            centers.append(new)
+
+    df = pd.DataFrame({"RA": [x[0] for x in centers], "Dec": [x[1] for x in centers]})
+
+    return df
+
+
+def get_square(ra_lim, dec_lim, summer: bool = False):
+
+    if summer:
+        width = SUMMER_BASE_WIDTH
+    else:
+        width = WINTER_BASE_WIDTH
+
+    ra_mid = np.mean(ra_lim)
+    dec_mid = np.mean(dec_lim)
+
+    center = [ra_mid, dec_mid]
+    centers = []
+    for i in [-1., 1.]:
+        for j in [-1, 1.]:
+            new = [ra_mid + 0.5*width * j, dec_mid + 0.5*width * i]
+            centers.append(new)
+
+    df = pd.DataFrame({"RA": [x[0] for x in centers], "Dec": [x[1] for x in centers]})
+
+    return df
+
+
 def schedule_neutrino(
         nu_name: str,
         scale: float = 1.,
@@ -52,13 +99,31 @@ def schedule_neutrino(
         nights: list = None,
         make_plot: bool = True,
         summer: bool = False,
+        strict: bool = True,
+        mode: str = "field"
 ):
     if nights is None:
         nights = neutrino_nights
 
     ra_lim, dec_lim, nu_time = parse_neutrino(nu_name, scale=scale)
 
-    res = get_fields_in_box(ra_lim, dec_lim, summer=summer)
+    if mode == "field":
+        res = get_fields_in_box(ra_lim, dec_lim, summer=summer)
+
+    elif mode == "cross":
+        res = get_cross(ra_lim, dec_lim, summer=summer)
+
+    elif mode == "square":
+        res = get_square(ra_lim, dec_lim, summer=summer)
+
+    else:
+        err = f"Mode {mode} not recognized"
+        logger.error(err)
+        raise ValueError(err)
+
+    if strict:
+        mask = (res["RA"] > ra_lim[0]) & (res["RA"] < ra_lim[1]) & (res["Dec"] > dec_lim[0]) & (res["Dec"] < dec_lim[1])
+        res = res[mask].reset_index(drop=True)
 
     if make_plot:
         plot_fields(res, ra_lim, dec_lim)
@@ -67,25 +132,50 @@ def schedule_neutrino(
 
     t_now = Time.now().mjd
 
-    for offset in nights:
+    for j, offset in enumerate(nights):
         t_start = t_now + offset
         t_end = t_start + 1
 
         for _, row in res.iterrows():
 
             kwargs = {
-                "field_id": row["ID"],
                 "target_priority": neutrino_priority,
                 "start_time_mjd": t_start,
                 "end_time_mjd": t_end,
+                "target_name": f"{nu_name}_{j}",
+                "use_best_detector": False
             }
+
             if too_args is not None:
                 kwargs.update(too_args)
 
-            if summer:
-                too_request = SummerFieldToO(**kwargs)
+            if mode == "field":
+
+                if summer:
+                    too_request = SummerFieldToO(
+                        field_id=row["ID"],
+                        **kwargs
+                    )
+                else:
+                    too_request = WinterFieldToO(
+                        field_id=row["ID"],
+                        **kwargs
+                    )
+
             else:
-                too_request = WinterFieldToO(**kwargs)
+                if summer:
+                    too_request = SummerRaDecToO(
+                        ra_deg=row["RA"],
+                        dec_deg=row["Dec"],
+                        **kwargs
+                    )
+                else:
+                    too_request = WinterRaDecToO(
+                        ra_deg=row["RA"],
+                        dec_deg=row["Dec"],
+                        **kwargs
+                    )
+
             too_requests.append(too_request)
 
     return too_requests
