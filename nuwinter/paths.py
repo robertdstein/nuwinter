@@ -1,12 +1,21 @@
-import os
-from nuztf.skymap_scanner import LOCALSOURCE
+"""
+This module is used to load the environment variables from the .env file
+"""
+import logging
+from pathlib import Path
+from dotenv import load_dotenv
 
-winter_data_dir = os.path.join(os.path.dirname(LOCALSOURCE), "nuwinter")
+logger = logging.getLogger(__name__)
 
-winter_schedule_dir = os.path.join(winter_data_dir, "schedule")
+code_dir = Path(__file__).resolve().parent
 
+env_file = code_dir / ".env"
 
-try:
-    os.makedirs(winter_schedule_dir)
-except OSError:
-    pass
+if env_file.exists():
+    logger.info(f"Loading environment variables from {env_file}")
+    load_dotenv(dotenv_path=env_file)
+else:
+    logger.warning(
+        f"No .env file found in {code_dir}. "
+        f"Make sure to set the environment variables manually."
+    )
