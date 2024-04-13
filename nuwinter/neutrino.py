@@ -92,6 +92,36 @@ def get_square(ra_lim, dec_lim, summer: bool = False):
     return df
 
 
+def get_pair(ra_lim, dec_lim, summer: bool = False):
+
+    if summer:
+        width = SUMMER_BASE_WIDTH
+    else:
+        width = WINTER_BASE_WIDTH
+
+    ra_mid = np.mean(ra_lim)
+    dec_mid = np.mean(dec_lim)
+
+    ra_width = ra_lim[1] - ra_lim[0]
+    dec_width = dec_lim[1] - dec_lim[0]
+
+    centers = []
+
+    if ra_width > dec_width:
+        for i in [-1, 1.]:
+            new = [ra_mid + 0.5*width * i, dec_mid]
+            centers.append(new)
+
+    else:
+        for i in [-1., 1.]:
+            new = [ra_mid, dec_mid + 0.5*width * i]
+            centers.append(new)
+
+    df = pd.DataFrame({"RA": [x[0] for x in centers], "Dec": [x[1] for x in centers]})
+
+    return df
+
+
 def schedule_neutrino(
         nu_name: str,
         scale: float = 1.,
@@ -116,6 +146,9 @@ def schedule_neutrino(
     elif mode == "square":
         res = get_square(ra_lim, dec_lim, summer=summer)
 
+    elif mode == "pair":
+        res = get_pair(ra_lim, dec_lim, summer=summer)
+
     else:
         err = f"Mode {mode} not recognized"
         logger.error(err)
@@ -134,7 +167,7 @@ def schedule_neutrino(
 
     for j, offset in enumerate(nights):
         t_start = t_now + offset
-        t_end = t_start + 1
+        t_end = t_start + 7.
 
         for _, row in res.iterrows():
 
