@@ -7,6 +7,7 @@ import pandas as pd
 from astropy import visualization
 from matplotlib.colors import Normalize
 from matplotlib.figure import Figure
+from nuztf.cat_match import get_cross_match_info
 
 from nuwinter.plot.compress import decode_img
 
@@ -19,12 +20,17 @@ BAND_NAMES = {
 }
 
 
-def generate_single_page(row: pd.Series, ann_fields: list[str]) -> Figure:
+def generate_single_page(
+        row: pd.Series,
+        ann_fields: list[str],
+        crossmatch: bool = False,
+) -> Figure:
     """
     Generate a page for a given row of data.
 
     :param row: Single detection in the data
     :param ann_fields: Fields to annotate
+    :param crossmatch: Whether to plot the crossmatch
     :return: Figure
     """
     cutouts = [x for x in row.index if "cutout" in x]
@@ -83,6 +89,74 @@ def generate_single_page(row: pd.Series, ann_fields: list[str]) -> Figure:
             plot_fields.append(f"{field}: {val:.3f}")
         else:
             plot_fields.append(f"{field}: {val}")
+
+    if crossmatch:
+
+        new = {
+            "candidate": row.to_dict(),
+            "objectId": row["objectid"]
+        }
+
+        xmatch_info = get_cross_match_info(
+            raw=new,
+        )
+
+        ypos = 0.95
+
+        if "[TNS NAME=" in xmatch_info:
+            tns_name = (
+                xmatch_info.split("[TNS NAME=")[1].split("]")[0].strip("AT").strip("SN")
+            )
+            ax_l.annotate(
+                "See On TNS",
+                xy=(0.5, 1),
+                xytext=(0.78, 0.05),
+                xycoords="figure fraction",
+                verticalalignment="top",
+                color="royalblue",
+                url=f"https://www.wis-tns.org/object/{tns_name}",
+                fontsize=22,
+                bbox=dict(
+                    boxstyle="round", fc="cornflowerblue", ec="royalblue", alpha=0.4
+                ),
+            )
+
+        fig.text(
+            0.5,
+            ypos,
+            xmatch_info,
+            va="top",
+            ha="center",
+            fontsize="medium",
+            alpha=0.5,
+        )
+
+    if "ztf_name" in row:
+        if not pd.isnull(row["ztf_name"]):
+
+            ax_l.annotate(
+                "See On Fritz (ZTF)",
+                xy=(0.5, 1),
+                xytext=(0.78, 0.05),
+                xycoords="figure fraction",
+                verticalalignment="top",
+                color="royalblue",
+                url=f"https://fritz.science/source/{row['ztf_name']}",
+                fontsize=12,
+                bbox=dict(boxstyle="round", fc="cornflowerblue", ec="royalblue", alpha=0.4),
+            )
+
+    ax_l.annotate(
+        "See On Fritz (WNTR)",
+        xy=(0.5, 1),
+        xytext=(0.63, 0.05),
+        xycoords="figure fraction",
+        verticalalignment="top",
+        color="royalblue",
+        url=f"https://fritz.science/source/{row['objectid']}",
+        fontsize=12,
+        bbox=dict(boxstyle="round", fc="cornflowerblue", ec="royalblue", alpha=0.4),
+    )
 
     plt.annotate(
         "\n".join(plot_fields), xy=(0.35, 0.98), xycoords="axes fraction", va="top"
