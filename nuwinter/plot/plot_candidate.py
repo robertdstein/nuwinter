@@ -10,6 +10,7 @@ from matplotlib.figure import Figure
 from nuztf.cat_match import get_cross_match_info
 
 from nuwinter.plot.compress import decode_img
+from nuwinter.ztf import ZTF_HIST_KEY, ZTF_NAME_KEY
 
 
 BAND_NAMES = {
@@ -17,6 +18,25 @@ BAND_NAMES = {
     2: "J",
     3: "H",
     4: "Dark"
+}
+
+BAND_COLORS = {
+    1: "yellow",
+    2: "brown",
+    3: "black",
+    4: "gray"
+}
+
+ZTF_BAND_NAMES = {
+    1: "g",
+    2: "r",
+    3: "i"
+}
+
+ZTF_BAND_COLORS = {
+    1: "green",
+    2: "red",
+    3: "orange"
 }
 
 
@@ -67,10 +87,29 @@ def generate_single_page(
             abs(df["sigmapsf"]),
             fmt=".",
             label=BAND_NAMES[fid],
-            color=f"C{int(fid)}",
+            color=BAND_COLORS[fid],
             mec="black",
             mew=0.5,
         )
+
+    # try:
+    if ZTF_HIST_KEY in row:
+        ztf = row["ztf_candidates"]
+        if row["ztf_candidates"] is not None:
+            for fid in set(ztf["fid"]):
+                df = ztf[ztf["fid"] == fid]
+                plt.errorbar(
+                    df["jd"],
+                    df["magpsf"],
+                    abs(df["sigmapsf"]),
+                    fmt=".",
+                    label=ZTF_BAND_NAMES[fid],
+                    color=ZTF_BAND_COLORS[fid],
+                    mec="black",
+                    mew=0.5,
+                )
+    # except KeyError:
+    #     pass
     plt.legend()
 
     plt.scatter(row["jd"], row["magpsf"])
@@ -131,8 +170,8 @@ def generate_single_page(
             alpha=0.5,
         )
 
-    if "ztf_name" in row:
-        if not pd.isnull(row["ztf_name"]):
+    if ZTF_NAME_KEY in row:
+        if not pd.isnull(row[ZTF_NAME_KEY]):
 
             ax_l.annotate(
                 "See On Fritz (ZTF)",
@@ -141,7 +180,7 @@ def generate_single_page(
                 xycoords="figure fraction",
                 verticalalignment="top",
                 color="royalblue",
-                url=f"https://fritz.science/source/{row['ztf_name']}",
+                url=f"https://fritz.science/source/{row[ZTF_NAME_KEY]}",
                 fontsize=12,
                 bbox=dict(boxstyle="round", fc="cornflowerblue", ec="royalblue", alpha=0.4),
             )

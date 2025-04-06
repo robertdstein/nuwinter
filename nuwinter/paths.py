@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 code_dir = Path(__file__).resolve().parent
 
-env_file = code_dir / ".env"
+env_file = code_dir.parent / ".env"
 
 if env_file.exists():
     logger.info(f"Loading environment variables from {env_file}")
