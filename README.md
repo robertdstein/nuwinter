@@ -30,4 +30,18 @@ You might have trouble with the odd astronomy package (looking at you ligo-segme
 conda install -c conda-forge lalsuite
 ```
 
-etc.
+
+## Set up the environment
+
+Copy .env.example to .env and fill in the details. You will need to get a WINTER API key from the WINTER team.
+
+
+## Using the code
+
+You will want to use jupyter notebooks. The rough order:
+
+* plan_obs.ipynb to plan your observations
+* download_data.ipynb to download the data. Put the avro data in a structure like ~/Data/winter/20250229/avro
+* analyse_data.ipynb to analyse the data using WINTER/ZTF
+* analyse_data_winter_only.ipynb to analyse the data using WINTER only
+* coverage.ipynb to check the coverage of the data
