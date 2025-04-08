@@ -92,7 +92,6 @@ def generate_single_page(
             mew=0.5,
         )
 
-    # try:
     if ZTF_HIST_KEY in row:
         ztf = row["ztf_candidates"]
         if row["ztf_candidates"] is not None:
@@ -108,8 +107,7 @@ def generate_single_page(
                     mec="black",
                     mew=0.5,
                 )
-    # except KeyError:
-    #     pass
+
     plt.legend()
 
     plt.scatter(row["jd"], row["magpsf"])

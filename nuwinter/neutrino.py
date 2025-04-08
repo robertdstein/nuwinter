@@ -9,7 +9,7 @@ from wintertoo.models.too import (
     SummerFieldToO,
     WinterFieldToO,
     WinterRaDecToO,
-SummerRaDecToO
+    SummerRaDecToO
 )
 from wintertoo.data import WINTER_BASE_WIDTH, SUMMER_BASE_WIDTH
 from astropy.time import Time
@@ -80,11 +80,13 @@ def get_square(ra_lim, dec_lim, summer: bool = False):
     ra_mid = np.mean(ra_lim)
     dec_mid = np.mean(dec_lim)
 
+    dec_factor = 1./np.cos(np.deg2rad(dec_mid))
+
     center = [ra_mid, dec_mid]
     centers = []
     for i in [-1., 1.]:
         for j in [-1, 1.]:
-            new = [ra_mid + 0.5*width * j, dec_mid + 0.5*width * i]
+            new = [ra_mid + 0.5*width * j * dec_factor, dec_mid + 0.5*width * i]
             centers.append(new)
 
     df = pd.DataFrame({"RA": [x[0] for x in centers], "Dec": [x[1] for x in centers]})
