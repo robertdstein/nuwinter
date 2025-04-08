@@ -9,7 +9,7 @@ from wintertoo.models.too import (
     SummerFieldToO,
     WinterFieldToO,
     WinterRaDecToO,
-SummerRaDecToO
+    SummerRaDecToO
 )
 from wintertoo.data import WINTER_BASE_WIDTH, SUMMER_BASE_WIDTH
 from astropy.time import Time
