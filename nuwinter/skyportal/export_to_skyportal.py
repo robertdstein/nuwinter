@@ -24,7 +24,7 @@ def export_one_source(row: pd.Series, client: SkyportalClient = None, group_id: 
     res = client.api("GET", f"source_exists/{row['objectid']}")
     res.raise_for_status()
 
-    if "does not exist" in res.json()["data"]:
+    if not res.json()["data"]["source_exists"]:
         data = {
             "ra": row["ra"],
             "dec": row["dec"],
